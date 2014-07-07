@@ -95,7 +95,7 @@ public class SyncManager {
                 RedoLog local = localMapping.get(key);
                 RedoLog remote = remoteMapping.get(key);
 
-                if(local.getVersion() > remote.getVersion()) {
+                if(local.getLastModifiedTime() > remote.getLastModifiedTime()) {
                     remoteMapping.remove(key);
                 } else {
                     localMapping.remove(key);
@@ -142,7 +142,7 @@ public class SyncManager {
             case RedoLog.TYPE_A:
             case RedoLog.TYPE_M:
                 log.info("download the file from cloud: " + redoLog.getTarget());
-                downloadFile(redoLog.getNow(), redoLog.getTarget());
+                downloadFile(redoLog.getNow(), redoLog.getTarget(), redoLog.getLastModifiedTime());
 
                 Index index = RemoteTransactionManager.toIndex(redoLog);
                 oldIndexes.put(index.getLocalPath(), index);
@@ -303,7 +303,7 @@ public class SyncManager {
         storageService.write("redo", new File(localPath + "/.sync/remote/redo"));
     }
 
-    private void downloadFile(String remote, String local) {
+    private void downloadFile(String remote, String local, long modified) {
         try {
             File tmp = new File(localPath + "/" + local + ".tmp");
             tmp.getParentFile().mkdirs();
@@ -314,6 +314,7 @@ public class SyncManager {
             deleteLocalFile(file);
 
             tmp.renameTo(file);
+            file.setLastModified(modified);
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);

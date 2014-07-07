@@ -24,7 +24,7 @@ public class IndexComparator {
             if(oldIndex == null) {
                 logs.add(toAddRedoLog(index));
             } else if(!oldIndex.getDigest().equals(index.getDigest())) {
-                logs.add(toModifyRedoLog(index, oldIndex));
+                logs.add(toModifyRedoLog(oldIndex, index));
             }
         }
 
@@ -45,19 +45,19 @@ public class IndexComparator {
         return log;
     }
 
-    private RedoLog toModifyRedoLog(Index one, Index another) {
+    private RedoLog toModifyRedoLog(Index old, Index now) {
         RedoLog log = new RedoLog();
         log.setType(RedoLog.TYPE_M);
-        log.setTarget(one.getLocalPath());
+        log.setTarget(old.getLocalPath());
 
-        if(one.getLastModifiedTime() > another.getLastModifiedTime()) {
-            log.setNow(one.getDigest());
-            log.setOld(another.getDigest());
-            log.setLastModifiedTime(one.getLastModifiedTime());
+        if(old.getLastModifiedTime() > now.getLastModifiedTime()) {
+            log.setNow(old.getDigest());
+            log.setOld(now.getDigest());
+            log.setLastModifiedTime(old.getLastModifiedTime());
         } else {
-            log.setNow(another.getDigest());
-            log.setOld(one.getDigest());
-            log.setLastModifiedTime(another.getLastModifiedTime());
+            log.setNow(now.getDigest());
+            log.setOld(old.getDigest());
+            log.setLastModifiedTime(now.getLastModifiedTime());
         }
 
         return log;
