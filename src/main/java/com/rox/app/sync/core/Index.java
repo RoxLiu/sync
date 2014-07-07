@@ -35,6 +35,6 @@ public class Index {
     }
 
     public String toString() {
-        return localPath + "," + digest + "," + lastModifiedTime;
+        return localPath + ":" + digest + ":" + lastModifiedTime;
     }
 }

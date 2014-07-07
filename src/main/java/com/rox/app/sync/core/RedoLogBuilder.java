@@ -21,7 +21,7 @@ public class RedoLogBuilder {
             @Override
             public void parseLine(String line) {
                 try {
-                    String[] split = line.split(",");
+                    String[] split = line.split(":");
 
                     RedoLog log = compose(split);
                     if(log != null) {

@@ -19,7 +19,7 @@ public class IndexBuilder {
             @Override
             public void parseLine(String line) {
                 try {
-                    String[] split = line.split(",");
+                    String[] split = line.split(":");
 
                     Index index = new Index();
                     index.setLocalPath(split[0]);

@@ -64,6 +64,6 @@ public class RedoLog {
     }
 
     public String toString() {
-        return version + "," + type + "," + target + "," + old + "," + now + "," + lastModifiedTime;
+        return version + ":" + type + ":" + target + ":" + old + ":" + now + ":" + lastModifiedTime;
     }
 }

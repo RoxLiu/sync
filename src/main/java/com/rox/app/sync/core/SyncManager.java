@@ -58,7 +58,7 @@ public class SyncManager {
      */
     private void checkLocalCache() throws RuntimeException{
         try {
-            log.info("check whether the local cache file exist.");
+            log.info("check whether the local cache file exist: " + localPath);
             mkDir(localPath + "/.sync");
             mkFile(localPath + "/.sync/head");
             mkFile(localPath + "/.sync/index");
@@ -103,22 +103,22 @@ public class SyncManager {
             }
         }
 
-        try {
-            log.info("begin to update the local files...");
-            for(RedoLog log : remoteMapping.values()) {
+        log.info("begin to update the local files...");
+        for(RedoLog log : remoteMapping.values()) {
+            try {
                 executeInLocal(log);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
 
-        try {
-            log.info("begin to update the cloud files...");
-            for(RedoLog log : localMapping.values()) {
+        log.info("begin to update the cloud files...");
+        for(RedoLog log : localMapping.values()) {
+            try {
                 executeInRemote(log);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
@@ -157,26 +157,35 @@ public class SyncManager {
         }
     }
 
-
-
     private void executeInRemote(RedoLog redoLog) {
-        //add the redo log.
-        remoteTransactionManager.addRedoLog(redoLog);
-
         switch (redoLog.getType()) {
-            case RedoLog.TYPE_A:
+            case RedoLog.TYPE_A: {
                 log.info("upload the file to cloud: " + redoLog.getTarget());
                 uploadFile(redoLog.getNow(), redoLog.getTarget());
+                //add the redo log.
+                remoteTransactionManager.addRedoLog(redoLog);
+                Index index = RemoteTransactionManager.toIndex(redoLog);
+                oldIndexes.put(index.getLocalPath(), index);
                 break;
-            case RedoLog.TYPE_M:
+            }
+            case RedoLog.TYPE_M: {
                 log.info("upload the file to cloud: " + redoLog.getTarget());
                 deleteRemoteFile(redoLog.getOld());
                 uploadFile(redoLog.getNow(), redoLog.getTarget());
+                //add the redo log.
+                remoteTransactionManager.addRedoLog(redoLog);
+                Index index = RemoteTransactionManager.toIndex(redoLog);
+                oldIndexes.put(index.getLocalPath(), index);
                 break;
-            case RedoLog.TYPE_D:
+            }
+            case RedoLog.TYPE_D: {
                 log.info("remove the file from cloud: " + redoLog.getTarget());
                 deleteRemoteFile(redoLog.getNow());
+                //add the redo log.
+                remoteTransactionManager.addRedoLog(redoLog);
+                oldIndexes.remove(redoLog.getTarget());
                 break;
+            }
             default:
                 System.out.println("Invalid Redo Log: " + redoLog);
         }
@@ -192,7 +201,8 @@ public class SyncManager {
     }
 
     protected void createIndex(File file, Map<String, Index> indexes) {
-        if(file.isFile()) {
+        //ignore the .tmp file, which is temp file during the download.
+        if(file.isFile() && !file.getName().endsWith(".tmp")) {
             Index index = createFileIndex(file);
             indexes.put(index.getLocalPath(), index);
         } else if(file.isDirectory() && !file.getName().equals(".sync")) {
@@ -236,21 +246,27 @@ public class SyncManager {
             if(storageService.exist("index")) {
                 storageService.read("index", new File(localPath + "/.sync/remote/index"));
             } else {
-                new File(localPath + "/.sync/remote/index").createNewFile();
+                File file =  new File(localPath + "/.sync/remote/index");
+                file.delete();
+                file.createNewFile();
             }
 
             log.info("download the remote head from cloud.");
             if(storageService.exist("head")) {
                 storageService.read("head", new File(localPath + "/.sync/remote/head"));
             } else {
-                new File(localPath + "/.sync/remote/head").createNewFile();
+                File file =  new File(localPath + "/.sync/remote/head");
+                file.delete();
+                file.createNewFile();
             }
 
             log.info("download the remote redo from cloud.");
             if(storageService.exist("redo")) {
                 storageService.read("redo", new File(localPath + "/.sync/remote/redo"));
             } else {
-                new File(localPath + "/.sync/remote/redo").createNewFile();
+                File file =  new File(localPath + "/.sync/remote/redo");
+                file.delete();
+                file.createNewFile();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -288,10 +304,20 @@ public class SyncManager {
     }
 
     private void downloadFile(String remote, String local) {
-        File file = new File(localPath + "/" + local);
-        deleteLocalFile(file);
+        try {
+            File tmp = new File(localPath + "/" + local + ".tmp");
+            tmp.getParentFile().mkdirs();
+            tmp.createNewFile();
+            storageService.read(remote, tmp);
 
-        storageService.read(remote, file);
+            File file = new File(localPath + "/" + local);
+            deleteLocalFile(file);
+
+            tmp.renameTo(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
     }
 
     private void deleteLocalFile(String path) {
@@ -329,10 +355,8 @@ public class SyncManager {
         }
     }
 
-    private void mkFile(String path) throws IOException{
+    private boolean mkFile(String path) throws IOException{
         File file = new File(path);
-        if(!file.exists() || file.isDirectory()) {
-            file.createNewFile();
-        }
+        return (!file.exists() || file.isDirectory()) && file.createNewFile();
     }
 }
