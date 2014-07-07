@@ -1,0 +1,3 @@
+java -Dfile.encoding=GBK -classpath ".;.\lib\commons-codec-1.6.jar;.\lib\commons-lang-2.6.jar;.\lib\commons-logging-1.1.1.jar;.\lib\guava-14.0.jar;.\lib\hamcrest-core-1.3.jar;.\lib\httpclient-4.2.1.jar;.\lib\httpcore-4.2.1.jar;.\lib\jackson-core-asl-1.9.12.jar;.\lib\jackson-mapper-asl-1.9.12.jar;.\lib\joda-time-2.2.jar;.\lib\junit-4.11.jar;.\lib\log4j-1.2.17.jar;.\lib\jss-sdk-java-1.2.0-SNAPSHOT.jar;.\lib\tools-1.0-SNAPSHOT.jar;;.\lib\sync-1.0-SNAPSHOT.jar" com.rox.app.sync.Sync
+
+pause

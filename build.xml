@@ -1,0 +1,69 @@
+<?xml version="1.0"  encoding="GB2312" ?>
+
+<project default="jars" basedir="." name="sync">
+    <property name="classes.dir" value="classes"/>
+    <property name="src.dir" value="src/main/java"/>
+    <property name="res.dir" value="src/main/resources"/>
+
+    <property name="target.file" value="./lib/sync-1.0-SNAPSHOT.jar"/>
+    <property name="zip.file" value="sync-1.0-SNAPSHOT.zip"/>
+    <!--classpath，编译的时候要用-->
+    <path id="classpath">
+        <fileset dir="./lib">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+    <!--
+        ===================================================================
+          Build the code (Compile Tasks,File Tasks)
+        ===================================================================
+    -->
+    <target name="clean">
+        <!--清除以前目录-->
+        <delete dir="${classes.dir}" failonerror="false"/>
+    </target>
+
+    <!--
+          init 准备目录(File Tasks)
+    -->
+    <target name="init" depends="clean">
+        <!--准备目录-->
+        <mkdir dir="${classes.dir}"/>
+    </target>
+
+    <target name="compile" depends="init">
+        <!--编译-->
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" debug="on" fork="on" source="1.7" target="1.7">
+            <compilerarg line="-encoding UTF-8"/>
+            <classpath refid="classpath"/>
+        </javac>
+    </target>
+
+    <!--
+        ===================================================================
+          打包文档(Archive Tasks)
+        ===================================================================
+    -->
+    <target name="jars" depends="compile">
+        <copy todir="${classes.dir}">
+            <fileset dir="${res.dir}">
+                <include name="com/**/*"/>
+            </fileset>
+        </copy>
+        <delete file="${target.file}"/>
+        <jar basedir="${classes.dir}" jarfile="${target.file}"/>
+    </target>
+
+    <target name="package" depends="jars">
+        <delete file="${zip.file}"/>
+        <zip destfile="${zip.file}">
+            <fileset dir=".">
+                <include name="lib/*.jar"/>
+                <include name="log4j.properties"/>
+                <include name="sync.bat"/>
+                <include name="sync.ini"/>
+            </fileset>
+        </zip>
+    </target>
+</project>
